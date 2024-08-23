@@ -16,7 +16,7 @@ class Colour:
 
 # KILLER
 # Kill the program and check first
-def kill():
+def killer():
   # Are you sure?
   check = input(f"{Colour.RED}Kill the program? [Y/n]:{Colour.END}")
   # Yes, I'm sure
