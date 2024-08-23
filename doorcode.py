@@ -1,5 +1,5 @@
 # Door Code Python
-version = "0.2"
+version = "0.3"
 
 # IMPORTS
 # Import the os package for reading terminal data
@@ -84,9 +84,9 @@ def location_selection():
 		except ValueError:
 			pass
 
-
+	# Missed all the checks
 	if location_index == None:
-		print("Location not recognised")
+		print("Location not recognised.")
 		return location_selection()
 
 	# Update the function variables to match
@@ -96,4 +96,5 @@ def location_selection():
 	print(f"{Colour.GREEN}{location_human_name}{Colour.END} (at '{location}') selected.")
 	return location
 
+#DEBUG
 location_selection()
