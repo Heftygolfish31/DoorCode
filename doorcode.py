@@ -1,18 +1,38 @@
 # Door Code Python
-version = "0.4"
+version = "0.5"
 
 # IMPORTS
 # Import the os package for reading terminal data
 import os
 # Import the time package for sleeping
 import time
+# Import the RegEx package for one tiny bug in the welcome page
+import re
 
 # COLOURS
+# ANSI codes used to format terminal text
 class Colour:
 	END="\033[0m"
+	BOLD="\033[1m"
+	UNDERLINE="\033[4m"
 	RED="\033[31m"
 	GREEN="\033[32m"
 	YELLOW="\033[33m"
+	CYAN="\033[36m"
+
+# CLEAR
+# Clear the screen; start afresh
+def clear():
+	# One of my favorite Python one liners
+	#  After reverse shells, of course
+	os.system('cls' if os.name == 'nt' else 'clear')
+
+# WELCOME
+# Welcome the user on startup
+def welcome():
+	# The startup message identifying the program
+	first_line = f"{Colour.UNDERLINE}*{Colour.END} {Colour.BOLD}{Colour.CYAN}Python Doorcode v{version}{Colour.END} {Colour.UNDERLINE}*{Colour.END}"
+	print(f"{first_line}")
 
 # KILLER
 # Kill the program and check first
@@ -44,7 +64,7 @@ def location_selection():
 	locations_human_names = []
 
 	# Open the locations directory
-	assert len(locations_dir) > 0, "No locations found."
+	assert len(locations_dir) > 0, f"{Colour.RED}No locations found.{Colour.END}"
 
 	# Retrieve human names for each file
 	for location in locations_dir:
@@ -66,13 +86,14 @@ def location_selection():
 		
 	# If the default file is still listed, it must not be corrupted
 	if "default" in locations_dir:
+		# Locations found
 		location_index = locations_dir.index(default_contents)
+		print(f"{Colour.YELLOW}Default used.{Colour.END}")
 	# There is only one file, use it
 	elif len(locations_dir) == 1:
 		location_index = 0
 	else:
-		print(f"Multiple locations found.")
-		print(f"{len(locations_human_names)} locations found:")
+		print(f"{Colour.GREEN}{len(locations_human_names)} locations found:{Colour.END}")
 		# List them
 		i = 0
 		for _ in locations_human_names:
@@ -113,9 +134,9 @@ def location_selection():
 
 # SEARCH FOR A ROOM
 # Load the location information and find the target
-def search(location, target):
+def search(location, target="", search_prompt="Enter a door ID: "):
 	# Make sure the location you want to access does, in fact, exist
-	assert os.path.exists(location), f"File ('{location}') does not exist."
+	assert os.path.exists(location), f"{Colour.RED}File ('{location}') does not exist.{Colour.END}"
 
 	# Get the codes from the file at specified location
 	file_contents = open(location, "r").readlines()
@@ -124,6 +145,9 @@ def search(location, target):
 	# Remove the human name so that it is not searchable
 	file_contents.pop(0)
 
+	# Declare the target
+	if target == "":
+		target = input(search_prompt)
 
 	# Find the target
 	rooms = []
@@ -176,6 +200,67 @@ def search(location, target):
 
 	# Now we must handle the response
 	#DEBUG
-	print(rooms)
+	# print(rooms)
 
-search(location_selection(), input("> "))
+	# There were results
+	if len(rooms) > 0:
+		# Result or results?
+		if len(rooms) == 1:
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} result found.{Colour.END}")
+		else:
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} results found.{Colour.END}")
+
+		# Prepare the results
+		max_id_len = 0
+		max_code_len = 0
+		for room in rooms:
+			# Split up the room data
+			room_type = room[0]
+			room_id = room[1][0]
+			room_code = room[1][1]
+			# If this room ID is longer than the rest
+			if len(room_id) > max_id_len:
+				max_id_len = len(room_id)
+			# If this room code is longer than the rest
+			if len(room_code) > max_code_len:
+				max_code_len = len(room_code)
+
+		# Output the results
+		last_type = ""
+		for room in rooms:
+			# Split up the room data
+			room_type = room[0]
+			room_id = room[1][0]
+			room_code = room[1][1]
+			# If this room is of a new type, print such
+			if not room_type == last_type:
+				print(f"{Colour.YELLOW}{room_type}{Colour.END}")
+				last_type = room_type
+
+			# Print the result
+			print(f"{Colour.GREEN}{room_id}{Colour.END}:{Colour.CYAN}{room_code}{Colour.END}")
+
+	# The search came up blank
+	else:
+		# Notify the user
+		print(f"{Colour.RED}No results found.{Colour.END}")
+		# Query if the user wants to try again
+		if input("Try again? [Y/n]: ").lower() in ["", "y", "yes"]:
+			# Keep the original call's arguments
+			#  Phew, almost missed that!
+			return search(location, target, search_prompt)
+		# If not, quit
+		else:
+			print(f"{Colour.GREEN}Goodbye!{Colour.END}")
+			quit()
+
+
+
+# Run on startup
+if __name__ == "__main__":
+	# Welcome the user
+	welcome()
+	# Prompt them for a location
+	location = location_selection()
+	# Search for a record in that location
+	search(location)
