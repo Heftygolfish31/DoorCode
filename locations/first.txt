@@ -1,15 +1,3 @@
 First
-OTHER:
-10,qwer
-20,asdf
-30,zxcv
-450,poiu
-678,lkjh
-0,welcome
-FIRST-FLOOR:
-11,qwer12
-12,asdf23
-13,zxcv345
-145,poiudfgt434
-1678,lkjh4345
-1202,122swws1
+KRILL:
+1,welcom

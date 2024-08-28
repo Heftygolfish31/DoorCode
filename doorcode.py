@@ -33,9 +33,12 @@ def killer():
 # Find and load the target location by file
 def location_selection():
 
+	# Make sure the locations directory exists
+	assert os.path.exists("./locations")
+
 	# Location Variables
 	location = ""
-	locations_dir = os.listdir("./locations")
+	locations_dir = os.listdir("./locations") #because of the `assert` above, this cannot fail
 	location_index = None
 	location_human_name = ""
 	locations_human_names = []
@@ -45,7 +48,14 @@ def location_selection():
 
 	# Retrieve human names for each file
 	for location in locations_dir:
-		locations_human_names.append(open(f"./locations/{location}", "r").readline()[:-1])
+		# Get the whole contents of the file
+		location_contents = open(f"./locations/{location}", "r").readlines()
+		# Check the file is formatted correctly
+		if not location_contents[-1][-1] == "\n":
+			# Write newline one-liner
+			open(f"./locations/{location}", "a").write("\n")
+		# Append the human name
+		locations_human_names.append(location_contents[0][:-1])
 
 	# If the default file exists but has a corrupted inside, don't use it
 	if "default" in locations_dir:
@@ -56,7 +66,7 @@ def location_selection():
 		
 	# If the default file is still listed, it must not be corrupted
 	if "default" in locations_dir:
-		location_index = locations_dir.index("default")
+		location_index = locations_dir.index(default_contents)
 	# There is only one file, use it
 	elif len(locations_dir) == 1:
 		location_index = 0
@@ -111,6 +121,8 @@ def search(location, target):
 	file_contents = open(location, "r").readlines()
 	# Get some data to do some end-user stuff
 	human_name = file_contents[0]
+	# Remove the human name so that it is not searchable
+	file_contents.pop(0)
 
 
 	# Find the target
@@ -137,10 +149,6 @@ def search(location, target):
 		#   Why must all the best feelings come at 22:23?
 		#    - S
 
-		# If its a copy, don't bother
-		if [room_type, room] in rooms:
-			continue
-
 		# If an exact match hasn't been found yet,
 		#  and the target is a substring of this room,
 		#   and it's not entierly a duplicate
@@ -166,6 +174,8 @@ def search(location, target):
 			# Add the room to the results list
 			rooms.append([room_type, room])
 
+	# Now we must handle the response
+	#DEBUG
 	print(rooms)
 
 search(location_selection(), input("> "))
