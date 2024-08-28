@@ -1,11 +1,15 @@
 # Door Code Python
-version = "0.5"
+VERSION = "1.0"
 
 # IMPORTS
 # Import the os package for reading terminal data
 import os
 # Import the time package for sleeping
 import time
+
+# GLOBALS
+LOCATION_HUMAN_NAME = ""
+LOCATION = ""
 
 # COLOURS
 # ANSI codes used to format terminal text
@@ -22,8 +26,12 @@ class Colour:
 # Welcome the user on startup
 def welcome():
 	# The startup message identifying the program
-	first_line = f"{Colour.UNDERLINE}*{Colour.END} {Colour.BOLD}{Colour.CYAN}Python Doorcode v{version}{Colour.END} {Colour.UNDERLINE}*{Colour.END}"
+	first_line = f"{Colour.UNDERLINE}*{Colour.END} {Colour.BOLD}{Colour.CYAN}Python Doorcode v{VERSION}{Colour.END} {Colour.UNDERLINE}*{Colour.END}"
 	print(f"{first_line}")
+	# Location slot
+	if not LOCATION_HUMAN_NAME == "":
+		print(f"| {Colour.CYAN}Location: {Colour.GREEN}{LOCATION_HUMAN_NAME}{Colour.END}")
+
 
 # CLEAR
 # Clear the screen; start afresh
@@ -54,6 +62,7 @@ def killer():
 	check = input(f"{Colour.BOLD}{Colour.RED}Kill the program? [Y/n]: {Colour.END}")
 	# Yes, I'm sure
 	if check.lower() in ["", "y", "yes"]:
+		clear(False)
 		print(f"{Colour.GREEN}Goodbye!{Colour.END}")
 		# Kill the program
 		exit()
@@ -66,16 +75,17 @@ def killer():
 
 # SELECT A LOCATION
 # Find and load the target location by file
-def location_selection():
+def location_selection(useDefault=True):
+	# Prepare the global location details
+	global LOCATION_HUMAN_NAME
+	global LOCATION
 
 	# Make sure the locations directory exists
-	assert os.path.exists("./locations")
+	assert os.path.exists("./locations"), f"{Colour.RED}Python Doorcode v{VERSION} misconfigured: './locations/' directory missing"
 
 	# Location Variables
-	location = ""
 	locations_dir = os.listdir("./locations") #because of the `assert` above, this cannot fail
 	location_index = None
-	location_human_name = ""
 	locations_human_names = []
 
 	# Open the locations directory
@@ -95,12 +105,16 @@ def location_selection():
 	# If the default file exists but has a corrupted inside, don't use it
 	if "default" in locations_dir:
 		default_contents = open(f"./locations/default", "r").readline()[:-1]
-		if default_contents not in locations_dir and not default_contents == "default":
-			locations_human_names.remove(locations_dir.index("default"))
+		# Remove the default option on the condition that:
+		# - the contents of default is not a valid location
+		#  OR 
+		# - the contents is default
+		if default_contents not in locations_dir or default_contents == "default" or not useDefault:
+			locations_human_names.pop(locations_dir.index("default"))
 			locations_dir.remove("default")
 		
 	# If the default file is still listed, it must not be corrupted
-	if "default" in locations_dir:
+	if "default" in locations_dir and useDefault:
 		# Locations found
 		location_index = locations_dir.index(default_contents)
 		print(f"{Colour.YELLOW}Default used.{Colour.END}")
@@ -108,17 +122,22 @@ def location_selection():
 	elif len(locations_dir) == 1:
 		location_index = 0
 	else:
-		print(f"{Colour.GREEN}{len(locations_human_names)} locations found:{Colour.END}")
+		# Announce the list
+		print(f"{Colour.GREEN}{Colour.BOLD}Locations:{Colour.END}")
+
 		# List them
 		i = 0
 		for _ in locations_human_names:
-			print(f"{i+1}. {Colour.YELLOW}{locations_human_names[i]}{Colour.END} (saved as {Colour.YELLOW}'{locations_dir[i]}{Colour.END})")
+			print(f"{i+1}. {Colour.YELLOW}{locations_human_names[i]}{Colour.END} (saved as {Colour.YELLOW}'{locations_dir[i]}'{Colour.END})")
 			i += 1
+
+		# Count them
+		print(f"{Colour.GREEN}{Colour.BOLD}{len(locations_human_names)}{Colour.END}{Colour.GREEN} locations found:{Colour.END}")
 		# The user now chooses one
 		choice = input(f"{Colour.BOLD}Select a location: {Colour.END}")
 
 		# Just came back from dental surgery.
-		#   Have never wanted donner more than right now.
+		#   Have never wanted pizza more than right now.
 		#    - S
 
 		try:
@@ -140,23 +159,38 @@ def location_selection():
 		return location_selection()
 
 	# Update the function variables to match
-	location = locations_dir[int(location_index)]
-	location_human_name = locations_human_names[int(location_index)]
+	LOCATION = locations_dir[int(location_index)]
+	LOCATION_HUMAN_NAME = locations_human_names[int(location_index)]
 	# Notify the user
-	print(f"{Colour.GREEN}{location_human_name}{Colour.END} (at '{location}') selected.")
-	return f"./locations/{location}"
+	clear()
+	print(f"{Colour.GREEN}{LOCATION_HUMAN_NAME}{Colour.END} (at '{LOCATION}') selected.")
+	return f"./locations/{LOCATION}"
 
+# SWITCHER
+# Facilitate switching locations
+def switcher():
+	# Get the current location human name
+	global LOCATION_HUMAN_NAME
+	# Are you sure?
+	check = input(f"{Colour.BOLD}{Colour.GREEN}Switch locations?{Colour.END} [Y/n]: ")
+	# Yes, I'm sure
+	if check.lower() in ["", "y", "yes"]:
+		clear()
+		# Select a location the same way you chose a starting one
+		location_selection(False)
+		return True
+	# No, continue
+	return False
 
 # SEARCH FOR A ROOM
 # Load the location information and find the target
-def search(location, target="", search_prompt="Enter a door ID: "):
+def search(target="", search_prompt="Enter a door ID: "):
 	# Make sure the location you want to access does, in fact, exist
-	assert os.path.exists(location), f"{Colour.RED}File ('{location}') does not exist.{Colour.END}"
+	assert os.path.exists(f"./locations/{LOCATION}"), f"{Colour.RED}File ('./locations/{LOCATION}') does not exist.{Colour.END}"
 
 	# Get the codes from the file at specified location
-	file_contents = open(location, "r").readlines()
+	file_contents = open(f"./locations/{LOCATION}", "r").readlines()
 	# Get some data to do some end-user stuff
-	human_name = file_contents[0][:-1]
 	# Remove the human name so that it is not searchable
 	file_contents.pop(0)
 
@@ -165,18 +199,24 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 		target = input(f"{Colour.BOLD}{search_prompt}{Colour.END}")
 
 	# Check it for keywords
-	if target.lower() in ["exit", "bye", "goodbye", "cya", "quit", "logout", "leave", "hwyl"]:
+	# The user may want to leave
+	if target.lower() in ["exit", "bye", "goodbye", "cya", "quit", "logout", "leave"]:
+		clear()
 		killer()
-
-	
+	# The user may want to switch locations
+	elif target.lower() in ["switch", "location", "change"]:
+		clear()
+		if switcher():
+			return
+	# The user may want help
+	# elif target.lower() in ["help", "?"]:
+		# helper()
 
 	# Find the target
 	rooms = []
 	room_type = "UNKNOWN:"
 	exact_match = False
 	for room in file_contents:
-		# Make a raw copy of the record
-		raw_room = room
 		# Split the record into managable chunks
 		room = room[:-1].split(",")
 
@@ -197,10 +237,11 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 		# If an exact match hasn't been found yet,
 		#  and the target is a substring of this room,
 		#   and it's not entierly a duplicate
-		if not exact_match and target in room[0]:
+		if not exact_match and target.lower() in room[0].lower():
 			# If the 'exact' match has been found
-			if target == room[0]:
+			if target.lower() == room[0].lower():
 
+				#TODO: Make this even a little bit nicer
 				# Kill all rooms with this type that don't match exactly
 				dead_rooms = []
 				# Collect all the rooms which aren't exact
@@ -220,16 +261,14 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 			rooms.append([room_type, room])
 
 	# Now we must handle the response
-	#DEBUG
-	# print(rooms)
 
 	# There were results
 	if len(rooms) > 0:
 		# Result or results?
 		if len(rooms) == 1:
-			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} result found for {human_name}.{Colour.END}")
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} result found for {LOCATION_HUMAN_NAME}.{Colour.END}")
 		else:
-			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} results found for {human_name}.{Colour.END}")
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} results found for {LOCATION_HUMAN_NAME}.{Colour.END}")
 
 		# Prepare the results
 		max_id_len = 0
@@ -271,27 +310,29 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 	# The search came up blank
 	else:
 		# Notify the user
-		print(f"{Colour.RED}No results found.{Colour.END}")
-		# Query if the user wants to try again
-		if input(f"{Colour.BOLD}Try again? [Y/n]: {Colour.END}").lower() in ["", "y", "yes"]:
-			# Keep the original call's arguments
-			#  Phew, almost missed that!
-			clear()
-			return search(location, search_prompt=search_prompt)
-		# If not, quit
-		else:
-			print(f"{Colour.GREEN}Goodbye!{Colour.END}")
-			exit()
+		print(f"{Colour.RED}No results found for {Colour.BOLD}'{target}'{Colour.END}{Colour.RED}.{Colour.END}")
+		# Try again after a timeout
+		countdown("Continuing", 2)
+		clear()
 
 
 
 # Run on startup
 if __name__ == "__main__":
-	# Clear the screen and run the welcome message
-	clear()
-	# Prompt them for a location
-	location = location_selection()
-	# Search loop
-	while True:
-		# Search for a record in that location
-		search(location)
+	try:
+		# Clear the screen and run the welcome message
+		clear()
+		# Prompt them for a location
+		location_selection()
+		# Search loop
+		while True:
+			# Search for a record in that location
+			search()
+		
+	# Someone pressed Ctrl + C !!
+	#  How scandalous!
+	#   - S
+	except KeyboardInterrupt:
+		clear(False)
+		print(f"{Colour.RED}* Python Doorcode v{VERSION} killed by keyboard interrupt.")
+		exit()
