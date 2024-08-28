@@ -6,8 +6,6 @@ version = "0.5"
 import os
 # Import the time package for sleeping
 import time
-# Import the RegEx package for one tiny bug in the welcome page
-import re
 
 # COLOURS
 # ANSI codes used to format terminal text
@@ -20,13 +18,6 @@ class Colour:
 	YELLOW="\033[33m"
 	CYAN="\033[36m"
 
-# CLEAR
-# Clear the screen; start afresh
-def clear():
-	# One of my favorite Python one liners
-	#  After reverse shells, of course
-	os.system('cls' if os.name == 'nt' else 'clear')
-
 # WELCOME
 # Welcome the user on startup
 def welcome():
@@ -34,18 +25,42 @@ def welcome():
 	first_line = f"{Colour.UNDERLINE}*{Colour.END} {Colour.BOLD}{Colour.CYAN}Python Doorcode v{version}{Colour.END} {Colour.UNDERLINE}*{Colour.END}"
 	print(f"{first_line}")
 
+# CLEAR
+# Clear the screen; start afresh
+def clear(toWelcome=True):
+	# One of my favorite Python one liners
+	#  After reverse shells, of course
+	os.system('cls' if os.name == 'nt' else 'clear')
+	# If the `toWelcome` flag is set, the welcome message leads everything
+	if toWelcome:
+		welcome()
+
+# COUNTDOWN
+# Simulate a single-line animation to show a clock timeout, in seconds
+def countdown(action, count=5):
+	# Loop for the number of times to sleep by
+	while count > 0:
+		# Print the warning
+		print(f"{Colour.RED}{action} in {Colour.BOLD}{count}{Colour.END}{Colour.RED} seconds...{Colour.END}", end="\r")
+		# Sleep for one second
+		time.sleep(1)
+		# Decrement the counter
+		count -= 1
+
 # KILLER
 # Kill the program and check first
 def killer():
 	# Are you sure?
-	check = input(f"{Colour.RED}Kill the program? [Y/n]:{Colour.END}")
+	check = input(f"{Colour.BOLD}{Colour.RED}Kill the program? [Y/n]: {Colour.END}")
 	# Yes, I'm sure
 	if check.lower() in ["", "y", "yes"]:
 		print(f"{Colour.GREEN}Goodbye!{Colour.END}")
+		# Kill the program
 		exit()
 	# Neither
 	elif check.lower() not in ["n", "no"]:
 		print(f"{Colour.RED}Input not recognised.{Colour.END}")
+		# Start the killer again
 		killer()
 	# No, continue the program
 
@@ -100,7 +115,7 @@ def location_selection():
 			print(f"{i+1}. {Colour.YELLOW}{locations_human_names[i]}{Colour.END} (saved as {Colour.YELLOW}'{locations_dir[i]}{Colour.END})")
 			i += 1
 		# The user now chooses one
-		choice = input("Select a location: ")
+		choice = input(f"{Colour.BOLD}Select a location: {Colour.END}")
 
 		# Just came back from dental surgery.
 		#   Have never wanted donner more than right now.
@@ -141,13 +156,19 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 	# Get the codes from the file at specified location
 	file_contents = open(location, "r").readlines()
 	# Get some data to do some end-user stuff
-	human_name = file_contents[0]
+	human_name = file_contents[0][:-1]
 	# Remove the human name so that it is not searchable
 	file_contents.pop(0)
 
 	# Declare the target
 	if target == "":
-		target = input(search_prompt)
+		target = input(f"{Colour.BOLD}{search_prompt}{Colour.END}")
+
+	# Check it for keywords
+	if target.lower() in ["exit", "bye", "goodbye", "cya", "quit", "logout", "leave", "hwyl"]:
+		killer()
+
+	
 
 	# Find the target
 	rooms = []
@@ -206,9 +227,9 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 	if len(rooms) > 0:
 		# Result or results?
 		if len(rooms) == 1:
-			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} result found.{Colour.END}")
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} result found for {human_name}.{Colour.END}")
 		else:
-			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} results found.{Colour.END}")
+			print(f"{Colour.GREEN}{Colour.BOLD}{len(rooms)}{Colour.END}{Colour.GREEN} results found for {human_name}.{Colour.END}")
 
 		# Prepare the results
 		max_id_len = 0
@@ -240,27 +261,37 @@ def search(location, target="", search_prompt="Enter a door ID: "):
 			# Print the result
 			print(f"{Colour.GREEN}{room_id}{Colour.END}:{Colour.CYAN}{room_code}{Colour.END}")
 
+		# Be sure the user knows output has ended
+		print(f"{Colour.RED}End of output.{Colour.END}")
+		# Timeout
+		countdown("Clearing", 5)
+		# Clear the last output
+		clear()
+
 	# The search came up blank
 	else:
 		# Notify the user
 		print(f"{Colour.RED}No results found.{Colour.END}")
 		# Query if the user wants to try again
-		if input("Try again? [Y/n]: ").lower() in ["", "y", "yes"]:
+		if input(f"{Colour.BOLD}Try again? [Y/n]: {Colour.END}").lower() in ["", "y", "yes"]:
 			# Keep the original call's arguments
 			#  Phew, almost missed that!
-			return search(location, target, search_prompt)
+			clear()
+			return search(location, search_prompt=search_prompt)
 		# If not, quit
 		else:
 			print(f"{Colour.GREEN}Goodbye!{Colour.END}")
-			quit()
+			exit()
 
 
 
 # Run on startup
 if __name__ == "__main__":
-	# Welcome the user
-	welcome()
+	# Clear the screen and run the welcome message
+	clear()
 	# Prompt them for a location
 	location = location_selection()
-	# Search for a record in that location
-	search(location)
+	# Search loop
+	while True:
+		# Search for a record in that location
+		search(location)
