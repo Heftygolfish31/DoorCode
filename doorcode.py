@@ -1,5 +1,5 @@
 # Door Code Python
-version = "0.3"
+version = "0.4"
 
 # IMPORTS
 # Import the os package for reading terminal data
