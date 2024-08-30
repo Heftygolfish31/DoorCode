@@ -1,5 +1,5 @@
 # Door Code Python
-VERSION = "1.0"
+VERSION = "1.1"
 
 # IMPORTS
 # Import the os package for reading terminal data
@@ -27,18 +27,18 @@ class Colour:
 def welcome():
 	# The startup message identifying the program
 	first_line = f"{Colour.UNDERLINE}*{Colour.END} {Colour.BOLD}{Colour.CYAN}Python Doorcode v{VERSION}{Colour.END} {Colour.UNDERLINE}*{Colour.END}"
-	print(f"{first_line}")
+	print(first_line)
 	# Location slot
 	if not LOCATION_HUMAN_NAME == "":
-		print(f"| {Colour.CYAN}Location: {Colour.GREEN}{LOCATION_HUMAN_NAME}{Colour.END}")
+		second_line = f"| {Colour.CYAN}Location: {Colour.GREEN}{LOCATION_HUMAN_NAME}{Colour.END}"
+		print(second_line)
 
 
 # CLEAR
 # Clear the screen; start afresh
 def clear(toWelcome=True):
-	# One of my favorite Python one liners
-	#  After reverse shells, of course
-	os.system('cls' if os.name == 'nt' else 'clear')
+	# ANSI 
+	print("\033c", end="")
 	# If the `toWelcome` flag is set, the welcome message leads everything
 	if toWelcome:
 		welcome()
@@ -48,8 +48,12 @@ def clear(toWelcome=True):
 def countdown(action, count=5):
 	# Loop for the number of times to sleep by
 	while count > 0:
+		# Second or seconds?
+		s_in_seconds = "s"
+		if count == 1:
+			s_in_seconds = ""
 		# Print the warning
-		print(f"{Colour.RED}{action} in {Colour.BOLD}{count}{Colour.END}{Colour.RED} seconds...{Colour.END}", end="\r")
+		print(f"{Colour.RED}{action} in {Colour.BOLD}{count}{Colour.END}{Colour.RED} second{s_in_seconds}...{Colour.END}", end="\r")
 		# Sleep for one second
 		time.sleep(1)
 		# Decrement the counter
@@ -66,7 +70,7 @@ def killer():
 		print(f"{Colour.GREEN}Goodbye!{Colour.END}")
 		# Kill the program
 		exit()
-	# Neither
+	# Neither yes nor no
 	elif check.lower() not in ["n", "no"]:
 		print(f"{Colour.RED}Input not recognised.{Colour.END}")
 		# Start the killer again
